@@ -21,16 +21,39 @@ DEMOS = $(wildcard demos/*.c)
 DEMOS_OBJ = $(addprefix obj/,$(notdir $(DEMOS:.c=.o)))
 DEMOS_EXE = $(DEMOS:.c=)
 
-CFLAGS = -I ./include -std=gnu99 -Wall -Werror -Wno-unused -O3 -g
+CFLAGS_NO_STD = -I ./include -Wall -Werror -Wno-unused -O3 -g
+CFLAGS = $(CFLAGS_NO_STD) -std=gnu99
 LFLAGS = -shared -g -ggdb
 
 PLATFORM = $(shell uname)
+
+ifneq ($(QNX_HOST),)
+# Done here to prevent other platforms from setting variables
+	PLATFORM = BlackBerry
+endif
 
 ifeq ($(findstring Linux,$(PLATFORM)),Linux)
 	DYNAMIC = libCello.so
 	STATIC = libCello.a
 	CFLAGS += -fPIC
 	LIBS = -lpthread -ldl -lm
+	INSTALL_LIB = mkdir -p ${L} && cp -f ${STATIC} ${L}/$(STATIC)
+	INSTALL_INC = mkdir -p ${I} && cp -r include/* ${I}
+endif
+
+ifeq ($(findstring BlackBerry,$(PLATFORM)),BlackBerry)
+	CC = $(QNX_HOST)/usr/bin/qcc
+	AR = $(QNX_HOST)/usr/bin/ntoarm-ar
+	LD = $(QNX_HOST)/usr/bin/ntoarmv7-ld
+
+	I=${DESTDIR}/build/include
+	L=${DESTDIR}/build/libs/arm
+
+	DYNAMIC = libCello.so
+	STATIC = libCello.a
+	CFLAGS = $(CFLAGS_NO_STD) -Wc,-std=gnu99 -V4.6.3,gcc_ntoarmv7le -D__QNX__ -fPIC
+	LFLAGS += -V4.6.3,gcc_ntoarmv7le
+	LIBS = -lm -lbacktrace
 	INSTALL_LIB = mkdir -p ${L} && cp -f ${STATIC} ${L}/$(STATIC)
 	INSTALL_INC = mkdir -p ${I} && cp -r include/* ${I}
 endif
@@ -71,7 +94,7 @@ obj:
 # Tests
 
 check: $(TESTS_OBJ) $(STATIC)
-	$(CC) $(TESTS_OBJ) $(STATIC) $(LIBS) -o test
+	$(CC) $(TESTS_OBJ) $(LFLAGS) $(STATIC) $(LIBS) -o test
 	./test
   
 obj/%.o: tests/%.c | obj

@@ -101,7 +101,7 @@ int Exception_Depth(void) {
   return td->exc_depth;
 }
 
-#if defined(__unix__) || defined(__APPLE__)
+#if (defined(__unix__) || defined(__APPLE__)) && !(defined(__QNX__))
 #include <execinfo.h>
 #endif
 
@@ -119,7 +119,7 @@ local void Exception_Error(void)  {
   print_to($(File, stderr), 0, "!!\tStack Trace: \n");
   print_to($(File, stderr), 0, "!!\t\n");
 
-#if defined(__unix__) || defined(__APPLE__)
+#if (defined(__unix__) || defined(__APPLE__)) && !(defined(__QNX__))
   char** symbols = backtrace_symbols(td->exc_backtrace, td->exc_backtrace_count);  
   
   for (int i = 0; i < td->exc_backtrace_count; i++) {
@@ -142,7 +142,7 @@ local void main_exc_msg_free(void) {
 var Exception_Throw(var obj, const char* fmt, const char* file, const char* func, int lineno, var_list vl) {
 
   ThreadData* td = current(Thread);
-#if defined(__unix__) || defined(__APPLE__)
+#if (defined(__unix__) || defined(__APPLE__)) && !(defined(__QNX__))
   td->exc_backtrace_count = backtrace(td->exc_backtrace, 25);
 #endif
   td->exc_obj = obj;
