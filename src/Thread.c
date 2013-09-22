@@ -214,6 +214,16 @@ var Thread_Call(var self, var args) {
 local ThreadData main_thread_wrapper;
 
 var Thread_Current(void) {
+
+#ifdef __QNX__
+  /* Setup Thread Local Storage */
+
+  if (not tls_key_created) {
+    tls_key_create();
+    tls_key_created = true;
+    atexit(tls_key_delete);
+  }
+#endif
   
 #if defined(__unix__) || defined(__APPLE__)
   var wrapper = pthread_getspecific(key_thread_wrapper);
