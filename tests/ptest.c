@@ -45,6 +45,8 @@ enum {
     SetConsoleTextAttribute(hCon, color);
   }
 
+#elif __QNX__
+  static void pt_color(int color) {} //No console output, so ignore setting color
 #else
 
 static const char* colors[] = {
@@ -68,9 +70,7 @@ static const char* colors[] = {
 
   static void pt_color(int color) {
 
-#ifndef __QNX__
     printf("%s", colors[color]);
-#endif
 
   }
 

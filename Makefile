@@ -22,7 +22,8 @@ DEMOS_OBJ = $(addprefix obj/,$(notdir $(DEMOS:.c=.o)))
 DEMOS_EXE = $(DEMOS:.c=)
 
 CFLAGS_NO_STD = -I ./include -Wall -Werror -Wno-unused -O3 -g
-CFLAGS = $(CFLAGS_NO_STD) -std=gnu99
+STD_GNU = -std=gnu99
+CFLAGS = $(CFLAGS_NO_STD) $(STD_GNU)
 LFLAGS = -shared -g -ggdb
 
 PLATFORM = $(shell uname)
@@ -43,17 +44,27 @@ endif
 
 ifeq ($(findstring BlackBerry,$(PLATFORM)),BlackBerry)
 	CC = $(QNX_HOST)/usr/bin/qcc
+
+	# ARM
 	AR = $(QNX_HOST)/usr/bin/ntoarm-ar
 	LD = $(QNX_HOST)/usr/bin/ntoarmv7-ld
+	QNX_VER = -V4.6.3,gcc_ntoarmv7le
+
+	# x86
+	# AR = $(QNX_HOST)/usr/bin/ntox86-ar
+	# LD = $(QNX_HOST)/usr/bin/ntox86-ld
+	# QNX_VER = -V4.6.3,gcc_ntox86
+	QNX_CFLAGS = -fstack-protector-strong -D__QNX__
+	QNX_LFLAGS = -Wl,-z,relro -Wl,-z,now
 
 	I=${DESTDIR}/build/include
 	L=${DESTDIR}/build/libs/arm
 
 	DYNAMIC = libCello.so
 	STATIC = libCello.a
-	CFLAGS = $(CFLAGS_NO_STD) -Wc,-std=gnu99 -V4.6.3,gcc_ntoarmv7le -D__QNX__ -fPIC
-	LFLAGS += -V4.6.3,gcc_ntoarmv7le
-	LIBS = -lm -lbacktrace
+	CFLAGS = $(CFLAGS_NO_STD) -Wc,$(STD_GNU) $(QNX_VER) -fPIC $(QNX_CFLAGS)
+	LFLAGS += $(QNX_VER) $(QNX_LFLAGS)
+	LIBS = -lm
 	INSTALL_LIB = mkdir -p ${L} && cp -f ${STATIC} ${L}/$(STATIC)
 	INSTALL_INC = mkdir -p ${I} && cp -r include/* ${I}
 endif
